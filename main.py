@@ -1,4 +1,5 @@
 import pygame
+import os
 pygame.init()
 Sprite = pygame.sprite.Sprite
 
@@ -19,6 +20,10 @@ GRAVITY = .75
 BG = (144, 201, 120)  # Background colors
 RED = (255, 0, 0)
 
+def draw_bg():
+    screen.fill(BG)
+    pygame.draw.line(screen, RED, (0, 300), (SCREEN_WIDTH, 300))
+
 moving_left = False
 moving_right = False
 
@@ -36,26 +41,29 @@ class Character(Sprite):
         self.frame_index = 0
         self.animation_list = []
         self.jump = False
+        self.in_air = True
         self.alive = True
         self.vel_y = 0
         self.update_time = pygame.time.get_ticks()
-
         
-        temp_list = []
-        for i in range(5):
-            img = pygame.image.load(f'./assets/{self.char_type}/Idle/{i}.png')
-            img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
-            temp_list.append(img)
-        self.animation_list.append(temp_list)
+        
+        # loading in all images
+        animation_types = ["Idle", "Running", "Jumping"]
 
-        temp_list = []
-        for i in range(6):
-            img = pygame.image.load(f'./assets/{self.char_type}/Running/{i}.png')
-            img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
-            temp_list.append(img)
-        self.animation_list.append(temp_list)
+        for type in animation_types:
+            # resets temporary image list
+            temp_list = []
+            # count number of files in the action folder
+            num_of_frames = len(os.listdir(f'./assets/{self.char_type}/{type}'))
+
+            for i in range(num_of_frames):
+                img = pygame.image.load(f'./assets/{self.char_type}/{type}/{i}.png')
+                img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+                temp_list.append(img)
+
+            self.animation_list.append(temp_list)
+
         self.image = self.animation_list[self.action][self.frame_index]
-
 
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -70,6 +78,24 @@ class Character(Sprite):
         if moving_right:
             dx = self.speed
             self.flip = False
+        if self.jump and not self.in_air:
+            self.vel_y = -11
+            self.jump = False
+            self.in_air = True
+        
+
+        # Apply gravity
+        self.vel_y += GRAVITY
+        if self.vel_y > 10:
+            self.vel_y = 10
+        dy = self.vel_y
+
+        #check collision with floor
+
+        if self.rect.bottom + dy > 300:
+            dy = 300 - self.rect.bottom
+            self.in_air = False
+
         self.rect.x += dx
         self.rect.y += dy
 
@@ -96,14 +122,6 @@ class Character(Sprite):
         flipped = pygame.transform.flip(self.image, self.flip, False)
         screen.blit(flipped, self.rect)
 
-    def jump(self):
-        dy = 5
-        self.rect.y += dy
-
-def draw_bg():
-    screen.fill(BG)
-    pygame.draw.line(screen, RED, (0, 300), (SCREEN_WIDTH, 300))
-
 
 player = Character("player", 200, 600, 2)  
 
@@ -121,6 +139,8 @@ while running:
     if player.alive:
         if moving_left or moving_right:
             player.update_action(1) # 1 is running
+        elif player.in_air:
+            player.update_action(2)
         else:
             player.update_action(0) # 0 is idle
 
