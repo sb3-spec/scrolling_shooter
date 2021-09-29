@@ -10,6 +10,7 @@ class Character(Sprite):
         Sprite.__init__(self)
         self.screen = screen
         self.speed = speed
+        self.direction = 1
         self.x = x
         self.y = y
         self.char_type = char_type
@@ -52,9 +53,11 @@ class Character(Sprite):
         if moving_left:
             dx = -self.speed
             self.flip = True
+            self.direction = -1
         if moving_right:
             dx = self.speed
             self.flip = False
+            self.direction = 1
         if self.jump and not self.in_air:
             self.vel_y = -11
             self.jump = False
