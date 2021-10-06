@@ -1,15 +1,17 @@
 import pygame
 import os
 from bullet import Bullet
+from grenade import Grenade
 Sprite = pygame.sprite.Sprite
 
 GRAVITY = .75
 
 class Character(Sprite):
     """Basic class for the hero, serves as a blueprint for our characters"""
-    def __init__(self, screen, char_type, x, y, scale, ammo, bullet_group, speed=5):
+    def __init__(self, screen, char_type, x, y, scale, ammo, bullet_group, grenades, speed=5):
         Sprite.__init__(self)
         self.screen = screen
+        self.grenades = grenades
         self.speed = speed
         self.start_ammo = ammo
         self.ammo = ammo
@@ -101,7 +103,13 @@ class Character(Sprite):
             bullet_group.add(bullet)
             # reduces ammo
             self.ammo -= 1
-            
+    
+    def grenade(self):
+            if self.grenades > 0:
+                grenade = Grenade(self.rect.centerx + (.5 * self.rect.size[0] * self.direction), self.rect.top, self.direction)
+                self.grenades -= 1
+                return grenade
+            return
 
 
     def update_animation(self):
