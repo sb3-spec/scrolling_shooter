@@ -2,13 +2,15 @@ import pygame
 import os
 from bullet import Bullet
 from grenade import Grenade
-Sprite = pygame.sprite.Sprite
+import random as r
 
-GRAVITY = .75
+from settings import SCREEN_WIDTH, SCROLL_THRESH, TILE_SIZE, GRAVITY
+
+Sprite = pygame.sprite.Sprite
 
 class Character(Sprite):
     """Basic class for the hero, serves as a blueprint for our characters"""
-    def __init__(self, screen, char_type, x, y, scale, ammo, bullet_group, grenades, speed=5):
+    def __init__(self, screen, char_type, x, y, scale, ammo, grenades, speed=5):
         Sprite.__init__(self)
         self.screen = screen
         self.grenades = grenades
@@ -31,6 +33,13 @@ class Character(Sprite):
         self.alive = True
         self.vel_y = 0
         self.update_time = pygame.time.get_ticks()
+
+        # ai specific variables
+        self.move_counter = 0
+        self.idling = False
+        self.idling_counter = 0
+        self.vision = pygame.Rect(0, 0, 150, 20)
+        self.grenade_counter = 0
         
         
         # loading in all images
@@ -50,6 +59,8 @@ class Character(Sprite):
             self.animation_list.append(temp_list)
 
         self.image = self.animation_list[self.action][self.frame_index]
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
 
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -61,7 +72,10 @@ class Character(Sprite):
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
     
-    def move(self, moving_left, moving_right):
+    def move(self, moving_left, moving_right, world, bg_scroll):
+        screen_scroll = 0
+        if not self.alive:
+            return screen_scroll
         dx = 0
         dy = 0
 
@@ -78,32 +92,110 @@ class Character(Sprite):
             self.jump = False
             self.in_air = True
         
-
         # Apply gravity
         self.vel_y += GRAVITY
         if self.vel_y > 10:
             self.vel_y = 10
         dy = self.vel_y
 
-        #check collision with floor
+        # check collision with obstacles
+        for tile in world.obstacle_list:
+            # check in x direction
+            if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                dx = 0
+            # check in y direction
+            if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                if self.vel_y < 0: # check if jumping
+                    self.vel_y = 0
+                    dy = self.rect.top - tile[1].bottom
+                elif self.vel_y >= 0: # check if falling
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy = tile[1].top - self.rect.bottom
 
-        if self.rect.bottom + dy > 300:
-            dy = 300 - self.rect.bottom
-            self.in_air = False
+        # check if going off the edges of the screen
+        if self.char_type == "player":
+            if self.rect.left + dx < 0 or self.rect.right + dx > SCREEN_WIDTH:
+                dx = 0
 
+        # update rectangle position      
         self.rect.x += dx
         self.rect.y += dy
+
+        # update scroll based on player position
+        if self.char_type != "player": # check if its the player
+            return screen_scroll
+        if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE)) or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+            self.rect.x -= dx
+            screen_scroll = -dx
+        return screen_scroll
+
 
 
     def shoot(self, bullet_group):
         """Method that creates bullet objects"""
         if self.shoot_cooldown == 0 and self.ammo > 0:
-            self.shoot_cooldown = 40
-            bullet = Bullet(self.rect.centerx + ((self.rect.size[0] / 2) * self.direction), self.rect.centery, self.direction, bullet_group)
+            self.shoot_cooldown = 20
+            bullet = Bullet(self.rect.centerx + ((self.rect.size[0] * .75) * self.direction), self.rect.centery, self.direction, bullet_group)
             bullet_group.add(bullet)
             # reduces ammo
             self.ammo -= 1
     
+    def ai(self, bullet_group, player, grenade_group, world, screen_scroll, bg_scroll):
+        if not player.alive:
+            return
+        """Simple ai function to handle enemy movement/awareness"""
+        if self.alive:
+            if r.randint(1, 300) == 5 and not self.idling:
+                self.idling = True
+                self.update_action(0)
+                self.idling_counter = 100
+
+            # check if enemy sees the player
+            if self.vision.colliderect(player.rect) and player.alive:
+                # stop running and face the player
+                self.update_action(0)
+                if self.ammo > 0:
+                    self.shoot(bullet_group)
+                if self.grenades > 0:
+                    if self.grenade_counter == 0:
+                        nade = self.grenade()
+                        grenade_group.add(nade)
+                        self.grenade_counter = 50
+                    else:
+                        self.grenade_counter -= 1
+            elif not self.idling:
+                if self.direction == 1:
+                    ai_moving_right = True
+                else:
+                    ai_moving_right = False
+                ai_moving_left = not ai_moving_right
+
+                
+                self.move(ai_moving_left, ai_moving_right, world, bg_scroll)
+                self.update_action(1)
+                self.move_counter += 1
+
+                # update ai vision as the enemy moves
+
+                self.vision.center = (self.rect.centerx + 100 * self.direction, self.rect.centery)
+
+                if self.move_counter > TILE_SIZE:
+                    self.move_counter *= -1
+                    self.direction *= -1
+            else:
+                self.idling_counter -= 1
+                if self.idling_counter <= 0:
+                    self.idling = False
+
+        # scroll
+        self.rect.x += screen_scroll
+
+            
+
+
+
+
     def grenade(self):
             if self.grenades > 0:
                 grenade = Grenade(self.rect.centerx + (.5 * self.rect.size[0] * self.direction), self.rect.top, self.direction)

@@ -1,9 +1,7 @@
 import pygame
 import os
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, GRAVITY
 Sprite = pygame.sprite.Sprite
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = int(SCREEN_WIDTH * .8)
-GRAVITY = .75
 
 class Explosion(Sprite):
     """Class for the explosion objects"""
@@ -26,7 +24,7 @@ class Explosion(Sprite):
         self.rect.center = (x, y)
         self.counter = 0
     
-    def update(self):
+    def update(self, screen_scroll):
         EXPLOSION_SPEED = 4
         # update explosion animation
         self.counter += 1
@@ -38,3 +36,5 @@ class Explosion(Sprite):
                 self.kill()
                 return
             self.image = self.images[self.frame_index]
+
+        self.rect.x += screen_scroll
