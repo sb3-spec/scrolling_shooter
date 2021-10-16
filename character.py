@@ -4,7 +4,7 @@ from bullet import Bullet
 from grenade import Grenade
 import random as r
 
-from settings import SCREEN_WIDTH, SCROLL_THRESH, TILE_SIZE, GRAVITY
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, SCROLL_THRESH, TILE_SIZE, GRAVITY
 
 Sprite = pygame.sprite.Sprite
 
@@ -72,10 +72,11 @@ class Character(Sprite):
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
     
-    def move(self, moving_left, moving_right, world, bg_scroll):
+    def move(self, moving_left, moving_right, world, bg_scroll, water_group, exit_group, box_group):
         screen_scroll = 0
+        level_complete = False
         if not self.alive:
-            return screen_scroll
+            return screen_scroll, level_complete
         dx = 0
         dy = 0
 
@@ -113,6 +114,30 @@ class Character(Sprite):
                     self.in_air = False
                     dy = tile[1].top - self.rect.bottom
 
+        for box in box_group:
+            if box.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                dx = 0
+            if box.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                if self.vel_y < 0: # check if jumping
+                    self.vel_y = 0
+                    dy = self.rect.top - box.rect.bottom
+                elif self.vel_y >= 0: # check if falling
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy = box.rect.top - self.rect.bottom
+
+        # check if in contact with water
+        if pygame.sprite.spritecollide(self, water_group, False):
+            self.health = 0
+        
+        # check if player falls off map
+        if self.rect.y > SCREEN_HEIGHT:
+            self.health = 0
+
+        # check for collision with exit
+        level_complete = False
+        if pygame.sprite.spritecollide(self, exit_group, False):
+            level_complete = True
         # check if going off the edges of the screen
         if self.char_type == "player":
             if self.rect.left + dx < 0 or self.rect.right + dx > SCREEN_WIDTH:
@@ -128,20 +153,21 @@ class Character(Sprite):
         if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE)) or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
             self.rect.x -= dx
             screen_scroll = -dx
-        return screen_scroll
+        return screen_scroll * 1.25, level_complete
 
 
 
-    def shoot(self, bullet_group):
+    def shoot(self, bullet_group, shot_fx):
         """Method that creates bullet objects"""
         if self.shoot_cooldown == 0 and self.ammo > 0:
-            self.shoot_cooldown = 20
+            self.shoot_cooldown = 15
             bullet = Bullet(self.rect.centerx + ((self.rect.size[0] * .75) * self.direction), self.rect.centery, self.direction, bullet_group)
             bullet_group.add(bullet)
+            shot_fx.play()
             # reduces ammo
             self.ammo -= 1
     
-    def ai(self, bullet_group, player, grenade_group, world, screen_scroll, bg_scroll):
+    def ai(self, bullet_group, player, grenade_group, world, screen_scroll, bg_scroll, water_group, exit_group, shoot_fx, box_group):
         if not player.alive:
             return
         """Simple ai function to handle enemy movement/awareness"""
@@ -156,7 +182,7 @@ class Character(Sprite):
                 # stop running and face the player
                 self.update_action(0)
                 if self.ammo > 0:
-                    self.shoot(bullet_group)
+                    self.shoot(bullet_group, shoot_fx)
                 if self.grenades > 0:
                     if self.grenade_counter == 0:
                         nade = self.grenade()
@@ -172,7 +198,7 @@ class Character(Sprite):
                 ai_moving_left = not ai_moving_right
 
                 
-                self.move(ai_moving_left, ai_moving_right, world, bg_scroll)
+                self.move(ai_moving_left, ai_moving_right, world, bg_scroll, water_group, exit_group, box_group)
                 self.update_action(1)
                 self.move_counter += 1
 

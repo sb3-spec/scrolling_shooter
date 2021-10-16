@@ -1,9 +1,10 @@
 import pygame
 Sprite = pygame.sprite.Sprite
 from explosion import Explosion
-from settings import SCREEN_HEIGHT, SCREEN_WIDTH, GRAVITY, TILE_SIZE
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE
 grenade_img = pygame.image.load("./assets/Icons/grenade.png")
 
+GRENADE_GRAV = .65
 class Grenade(Sprite):
     """Class for the grenade objects"""
     def __init__(self, x, y, direction) -> None:
@@ -19,7 +20,7 @@ class Grenade(Sprite):
         self.direction = direction
     
     def update(self, world, screen_scroll):
-        self.vel_y += GRAVITY
+        self.vel_y += GRENADE_GRAV
         if self.vel_y > 10:
             self.vel_y = 10
         dx = self.speed * self.direction
@@ -54,25 +55,26 @@ class Grenade(Sprite):
         self.rect.x += screen_scroll
         
         
-    def handle_explosion(self, player, enemy_group):
+    def handle_explosion(self, player, enemy_group, grenade_fx):
         """handles the fuse timer and explosion"""
         # fuse length
         self.timer -= 1
         if self.timer <= 0:
             # create explosion instance
+            grenade_fx.play()
             explosion = Explosion(self.rect.x, self.rect.y, 2)
             self.kill()
             # do damage to player
             print(player.health)
             if abs(self.rect.centerx - player.rect.centerx) < TILE_SIZE * 2 and \
                 abs(self.rect.centery - player.rect.centery) < TILE_SIZE * 2:
-                player.health -= 50
+                player.health -= 80
 
             # do damage to enemies
             for enemy in enemy_group:
                 if abs(self.rect.centerx - enemy.rect.centerx) < TILE_SIZE * 2 and \
                     abs(self.rect.centery - enemy.rect.centery) < TILE_SIZE * 2:
-                    enemy.health -= 50
+                    enemy.health -= 80
 
             return explosion
         return False

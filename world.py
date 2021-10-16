@@ -6,6 +6,9 @@ from healthbar import HealthBar
 from itembox import ItemBox
 from decorations import Water, Decoration, Exit
 
+from box import Box
+
+
 pine1_img = pygame.image.load('./assets/background/pine1.png').convert_alpha()
 pine2_img = pygame.image.load('./assets/background/pine2.png').convert_alpha()
 mountain_img = pygame.image.load('./assets/background/mountain.png').convert_alpha()
@@ -15,7 +18,7 @@ class World():
     def __init__(self):
         self.obstacle_list = []
 
-    def process_data(self, data, enemy_group, item_box_group, water_group, decoration_group):
+    def process_data(self, data, enemy_group, item_box_group, water_group, decoration_group, exit_group, box_group):
         """Turns world_data into a level"""
         tile_list = self.load_images()
 
@@ -28,8 +31,11 @@ class World():
                     img_rect.x = x * TILE_SIZE
                     img_rect.y = y * TILE_SIZE
                     tile_data = (img, img_rect)
-                    if (tile >= 0 and tile <= 8) or tile == 12: 
+                    if (tile >= 0 and tile <= 8):
                         self.obstacle_list.append(tile_data)
+                    elif tile == 12:
+                        box = Box(img_rect.x, img_rect.y, img, 1)
+                        box_group.add(box) 
                     elif tile == 9 or tile == 10:
                         water = Water(img, img_rect.x, img_rect.y)
                         water_group.add(water)
@@ -57,8 +63,8 @@ class World():
                         ammo_box = ItemBox("Health", img_rect.x, img_rect.y)
                         item_box_group.add(ammo_box)
                     elif tile == 20:
-                        # create exit
-                        pass
+                        exit = Exit(img, img_rect.x, img_rect.y)
+                        exit_group.add(exit)
         return player, player_health_bar
 
     

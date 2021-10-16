@@ -16,7 +16,7 @@ class Bullet(Sprite):
         self.direction = direction
         self.bullet_group = bullet_group
     
-    def update(self, player, enemy_group, world, screen_scroll):
+    def update(self, player, enemy_group, world, screen_scroll, box_group):
         # move bullet
         self.rect.x += (self.direction * self.speed + screen_scroll)
         # check if bullet is off screen
@@ -26,7 +26,7 @@ class Bullet(Sprite):
         # check collision with characters
         if pygame.sprite.spritecollide(player, self.bullet_group, False):
             if player.alive:
-                player.health -= 0
+                player.health -= 34
                 self.kill()
         
         # check collision with obstacles
@@ -37,5 +37,11 @@ class Bullet(Sprite):
         for enemy in enemy_group:
             if pygame.sprite.spritecollide(enemy, self.bullet_group, False):
                 if enemy.alive:
-                    enemy.health -= 25
+                    enemy.health -= 34
+                    self.kill()
+
+        for box in box_group:
+            if pygame.sprite.spritecollide(box, self.bullet_group, False):
+                if box.alive:
+                    box.health -= 34
                     self.kill()
