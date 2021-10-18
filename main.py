@@ -8,8 +8,9 @@ mixer.init()
 Sprite = pygame.sprite.Sprite
 
 from world import World
-from settings import MAX_LEVELS, screen, SCREEN_HEIGHT, SCREEN_WIDTH, screen_scroll, bg_scroll
+from settings import MAX_LEVELS, screen, SCREEN_HEIGHT, SCREEN_WIDTH, screen_scroll, bg_scroll, PINK, BLACK
 from button import Button
+from screenfade import ScreenFade
 
 """Setting up the game window"""
 
@@ -20,10 +21,6 @@ clock = pygame.time.Clock()
 FPS = 80
 
 # game variables
-ROWS = 16
-COLS = 150
-TILE_SIZE = SCREEN_HEIGHT // ROWS
-TILE_TYPES = 21
 level = 1
 start_game = False
 # define player variables
@@ -32,6 +29,8 @@ moving_right = False
 shooting = False
 grenade = False
 grenade_thrown = False
+
+start_intro = False
 
 
 # define font
@@ -70,6 +69,7 @@ def reset_level():
     water_group.empty()
     exit_group.empty()
     bullet_group.empty()
+    box_group.empty()
     # create empty world data
     data = []
     pickle_in = open(f'./level_data/level{level}_data', 'rb')
@@ -99,7 +99,8 @@ start_btn = Button(SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 - 150, start_btn_
 exit_btn = Button(SCREEN_WIDTH // 2 - 110, SCREEN_HEIGHT // 2 + 50, exit_btn_img, 1)
 restart_btn = Button(SCREEN_WIDTH // 2 - 115, SCREEN_HEIGHT // 2 - 50, restart_btn_img, 2)
 
-
+death_fade = ScreenFade(2, PINK, 7)
+intro_fade = ScreenFade(1, BLACK, 6)
 
 
 # create empty tile list
@@ -121,6 +122,7 @@ while running:
         screen.fill(BG)
         if start_btn.draw(screen):
             start_game = True
+            start_intro = True
         if exit_btn.draw(screen):
             running = False
     else:   
@@ -139,12 +141,13 @@ while running:
 
         # check if player has completed level
         if level_complete:
+            start_intro = True
             level += 1
             bg_scroll = 0
             world_data = reset_level()
             if level <= MAX_LEVELS:
                 world = World()
-                player, health_bar = world.process_data(world_data, enemy_group, item_box_group, water_group, decoration_group, exit_group)
+                player, health_bar = world.process_data(world_data, enemy_group, item_box_group, water_group, decoration_group, exit_group, box_group)
 
         # draw ammo count
         draw_text(f"AMMO: {player.ammo}", font, WHITE, 10, 35 )
@@ -194,9 +197,16 @@ while running:
         # # update explosive boxes
         box_group.update(screen_scroll)
         box_group.draw(screen)
+        # update level exit
+        exit_group.update(screen_scroll)
+        exit_group.draw(screen)
 
 
-
+        # show intro
+        if start_intro:
+            if intro_fade.fade():
+                start_intro = False
+                intro_fade.fade_counter = 0
 
         # update player actions
         if player.alive:
@@ -213,12 +223,15 @@ while running:
             else:
                 player.update_action(0) # 0 is idle
         else:
-            screen_scroll = 0
-            if restart_btn.draw(screen):
-                bg_scroll = 0
-                world_data = reset_level()
-                world = World()
-                player, health_bar = world.process_data(world_data, enemy_group, item_box_group, water_group, decoration_group, exit_group, box_group)
+            if death_fade.fade():
+                screen_scroll = 0
+                if restart_btn.draw(screen):
+                    death_fade.fade_counter = 0
+                    start_intro = True
+                    bg_scroll = 0
+                    world_data = reset_level()
+                    world = World()
+                    player, health_bar = world.process_data(world_data, enemy_group, item_box_group, water_group, decoration_group, exit_group, box_group)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

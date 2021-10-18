@@ -75,6 +75,8 @@ class Character(Sprite):
     def move(self, moving_left, moving_right, world, bg_scroll, water_group, exit_group, box_group):
         screen_scroll = 0
         level_complete = False
+        
+        
         if not self.alive:
             return screen_scroll, level_complete
         dx = 0
@@ -104,6 +106,8 @@ class Character(Sprite):
             # check in x direction
             if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
+                if self.char_type == "Enemy":
+                    dx = -self.speed
             # check in y direction
             if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
@@ -117,6 +121,8 @@ class Character(Sprite):
         for box in box_group:
             if box.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
+                if self.char_type == "Enemy":
+                    dx = -self.speed
             if box.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
                     self.vel_y = 0
@@ -175,8 +181,8 @@ class Character(Sprite):
             if r.randint(1, 300) == 5 and not self.idling:
                 self.idling = True
                 self.update_action(0)
-                self.idling_counter = 100
-
+                self.idling_counter = 200
+                
             # check if enemy sees the player
             if self.vision.colliderect(player.rect) and player.alive:
                 # stop running and face the player
@@ -213,7 +219,6 @@ class Character(Sprite):
                 self.idling_counter -= 1
                 if self.idling_counter <= 0:
                     self.idling = False
-
         # scroll
         self.rect.x += screen_scroll
 

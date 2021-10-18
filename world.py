@@ -48,7 +48,7 @@ class World():
                         player_health_bar = HealthBar(10, 10, player.health, player.health)
                     elif tile == 16:
                         # create enemies
-                        enemy = Character(screen, "enemy", img_rect.x, img_rect.y, 1.65, 20, 10, 2)
+                        enemy = Character(screen, "enemy", img_rect.x, img_rect.y, 1.65, 20, 10, 1)
                         enemy_group.add(enemy)
                     elif tile == 17:
                         # create ammo box
