@@ -78,7 +78,9 @@ class Character(Sprite):
         
         
         if not self.alive:
+        
             return screen_scroll, level_complete
+        
         dx = 0
         dy = 0
 
@@ -155,7 +157,7 @@ class Character(Sprite):
 
         # update scroll based on player position
         if self.char_type != "player": # check if its the player
-            return screen_scroll
+            return screen_scroll, level_complete
         if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE)) or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
             self.rect.x -= dx
             screen_scroll = -dx
