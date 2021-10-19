@@ -243,33 +243,31 @@ while running:
                 moving_right = True
             elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 moving_left = True
-            elif event.key == pygame.K_SPACE or event.key == pygame.K_UP and player.alive:
+            if event.key == pygame.K_w or event.key == pygame.K_UP and player.alive:
                 player.jump = True
                 jump_fx.play()
-            elif event.key == pygame.K_q:
+            if event.key == pygame.K_SPACE and player.alive:
+                shooting = True
+            if event.key == pygame.K_q:
                 grenade = True
-            elif event.key == pygame.K_ESCAPE:
-                running = False
-        
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            shooting = True
-        if event.type == pygame.MOUSEBUTTONUP:
-            shooting = False
+            if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                player.speed = player.running_speed
         
         # keyboard button release
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                 moving_right = False
-            elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
+            if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 moving_left = False
-            elif event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE:
                 shooting = False
-            elif event.key == pygame.K_q:
+            if event.key == pygame.K_q:
                 grenade = False
                 grenade_thrown = False
-            elif event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE:
                 shooting = False
-
+            if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                player.speed = player.walking_speed
 
         
 

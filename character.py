@@ -13,6 +13,8 @@ class Character(Sprite):
     def __init__(self, screen, char_type, x, y, scale, ammo, grenades, speed=5):
         Sprite.__init__(self)
         self.screen = screen
+        self.walking_speed = speed
+        self.running_speed = 1.5 * self.walking_speed
         self.grenades = grenades
         self.speed = speed
         self.start_ammo = ammo
@@ -77,25 +79,22 @@ class Character(Sprite):
         level_complete = False
         
         
-        if not self.alive:
-        
-            return screen_scroll, level_complete
-        
         dx = 0
-        dy = 0
-
-        if moving_left:
-            dx = -self.speed
-            self.flip = True
-            self.direction = -1
-        if moving_right:
-            dx = self.speed
-            self.flip = False
-            self.direction = 1
-        if self.jump and not self.in_air:
-            self.vel_y = -15
-            self.jump = False
-            self.in_air = True
+        dy = 0 
+        
+        if self.alive:
+            if moving_left:
+                dx = -self.speed
+                self.flip = True
+                self.direction = -1
+            if moving_right:
+                dx = self.speed
+                self.flip = False
+                self.direction = 1
+            if self.jump and not self.in_air:
+                self.vel_y = -15
+                self.jump = False
+                self.in_air = True
         
         # Apply gravity
         self.vel_y += GRAVITY
@@ -109,7 +108,7 @@ class Character(Sprite):
             if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
                 if self.char_type == "Enemy":
-                    dx = -self.speed
+                    self.flip = not self.flip
             # check in y direction
             if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
@@ -123,8 +122,6 @@ class Character(Sprite):
         for box in box_group:
             if box.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
-                if self.char_type == "Enemy":
-                    dx = -self.speed
             if box.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
                     self.vel_y = 0
@@ -222,6 +219,9 @@ class Character(Sprite):
                 if self.idling_counter <= 0:
                     self.idling = False
         # scroll
+        else:
+            
+            self.move(False, False, world, bg_scroll, water_group, exit_group, box_group)
         self.rect.x += screen_scroll
 
             
@@ -230,7 +230,7 @@ class Character(Sprite):
 
 
     def grenade(self):
-            if self.grenades > 0:
+            if self.grenades > 0 and self.alive:
                 grenade = Grenade(self.rect.centerx + (.5 * self.rect.size[0] * self.direction), self.rect.top, self.direction)
                 self.grenades -= 1
                 return grenade
