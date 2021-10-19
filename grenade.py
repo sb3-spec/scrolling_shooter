@@ -1,10 +1,9 @@
 import pygame
 Sprite = pygame.sprite.Sprite
 from explosion import Explosion
-from settings import SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, TILE_SIZE, GRAVITY
 grenade_img = pygame.image.load("./assets/Icons/grenade.png")
 
-GRENADE_GRAV = .65
 class Grenade(Sprite):
     """Class for the grenade objects"""
     def __init__(self, x, y, direction) -> None:
@@ -19,8 +18,8 @@ class Grenade(Sprite):
         self.rect.center = (x, y)
         self.direction = direction
     
-    def update(self, world, screen_scroll):
-        self.vel_y += GRENADE_GRAV
+    def update(self, world, screen_scroll, box_group):
+        self.vel_y += GRAVITY
         if self.vel_y > 10:
             self.vel_y = 10
         dx = self.speed * self.direction
@@ -43,6 +42,22 @@ class Grenade(Sprite):
                     dy = tile[1].top - self.rect.bottom
                     self.speed = 0
         
+        for box in box_group:
+            # check in x direction
+            if box.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
+                self.direction *= -1
+                dx = self.speed * self.direction
+            # check in y direction
+            if box.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                # check if grenade has upward momentum
+                if self.vel_y < 0:
+                    self.vel_y = 0
+                    dy = box.rect.bottom - self.rect.top
+                elif self.vel_y >= 0: # check if grenade if falling
+                    self.vel_y = 0
+                    dy = box.rect.top - self.rect.bottom
+                    self.speed = 0
+                    
         # check wall collision
         if self.rect.right + dx > SCREEN_WIDTH or self.rect.left + dx < 0:
             self.direction *= -1
@@ -55,7 +70,7 @@ class Grenade(Sprite):
         self.rect.x += screen_scroll
         
         
-    def handle_explosion(self, player, enemy_group, grenade_fx):
+    def handle_explosion(self, player, enemy_group, grenade_fx, box_group):
         """handles the fuse timer and explosion"""
         # fuse length
         self.timer -= 1
@@ -75,12 +90,14 @@ class Grenade(Sprite):
                 if abs(self.rect.centerx - enemy.rect.centerx) < TILE_SIZE * 2 and \
                     abs(self.rect.centery - enemy.rect.centery) < TILE_SIZE * 2:
                     enemy.health -= 80
+            
+            for box in box_group:
+                if abs(self.rect.centerx - box.rect.centerx) < TILE_SIZE * 2 and \
+                    abs(self.rect.centery - box.rect.centery) < TILE_SIZE * 2:
+                    box.health -= 80
 
             return explosion
         return False
-
-
-# from main import player
 
 
 

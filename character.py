@@ -91,7 +91,7 @@ class Character(Sprite):
             self.flip = False
             self.direction = 1
         if self.jump and not self.in_air:
-            self.vel_y = -11
+            self.vel_y = -15
             self.jump = False
             self.in_air = True
         

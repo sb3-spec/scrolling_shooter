@@ -72,7 +72,7 @@ def reset_level():
     box_group.empty()
     # create empty world data
     data = []
-    pickle_in = open(f'./level_data/level{level}_data', 'rb')
+    pickle_in = open(f'./Level Editor/level_data/level{level}_data', 'rb')
     data = pickle.load(pickle_in)
 
     return data
@@ -105,7 +105,7 @@ intro_fade = ScreenFade(1, BLACK, 6)
 
 # create empty tile list
 world_data = []
-pickle_in = open(f'./level_data/level{level}_data', 'rb')
+pickle_in = open(f'./Level Editor/level_data/level{level}_data', 'rb')
 world_data = pickle.load(pickle_in)
 
 world = World()
@@ -160,7 +160,7 @@ while running:
 
         # checking if grenades have detonated
         for grenade_ in grenade_group:
-            explosion = grenade_.handle_explosion(player, enemy_group, grenade_fx)
+            explosion = grenade_.handle_explosion(player, enemy_group, grenade_fx, box_group)
             if explosion:
                 explosion_group.add(explosion)
 
@@ -180,7 +180,7 @@ while running:
         bullet_group.update(player, enemy_group, world, screen_scroll, box_group)
         bullet_group.draw(screen) 
         # update grenades
-        grenade_group.update(world, screen_scroll)
+        grenade_group.update(world, screen_scroll, box_group)
         grenade_group.draw(screen)
         # update explosions
         explosion_group.update(screen_scroll)
