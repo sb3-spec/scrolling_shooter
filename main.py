@@ -153,7 +153,7 @@ while running:
         draw_text(f"AMMO: {player.ammo}", font, WHITE, 10, 35 )
 
         # draw grenade count
-        draw_text("GRENADES: ", font, WHITE, 10, 60 )
+        draw_text("GRENADES: ", font, WHITE, 10, 60)
         grenade_img = pygame.image.load("./assets/Icons/grenade.png")
         for i in range(player.grenades):
             screen.blit(grenade_img, (135 + (i * 15), 63))

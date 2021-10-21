@@ -4,7 +4,7 @@ from bullet import Bullet
 from grenade import Grenade
 import random as r
 
-from settings import SCREEN_HEIGHT, SCREEN_WIDTH, SCROLL_THRESH, TILE_SIZE, GRAVITY
+from settings import SCREEN_HEIGHT, SCREEN_WIDTH, SCROLL_THRESH, TILE_SIZE, GRAVITY, screen, PINK
 
 Sprite = pygame.sprite.Sprite
 
@@ -40,7 +40,9 @@ class Character(Sprite):
         self.move_counter = 0
         self.idling = False
         self.idling_counter = 0
-        self.vision = pygame.Rect(0, 0, 150, 20)
+        self.max_visible_length = 200
+        self.visible_length = self.max_visible_length
+        self.vision = pygame.Rect(0, 0, self.max_visible_length, 20)
         self.grenade_counter = 0
         
         
@@ -75,9 +77,8 @@ class Character(Sprite):
             self.shoot_cooldown -= 1
     
     def move(self, moving_left, moving_right, world, bg_scroll, water_group, exit_group, box_group):
+        # reset movement variables
         screen_scroll = 0
-        level_complete = False
-        
         
         dx = 0
         dy = 0 
@@ -91,6 +92,7 @@ class Character(Sprite):
                 dx = self.speed
                 self.flip = False
                 self.direction = 1
+                
             if self.jump and not self.in_air:
                 self.vel_y = -15
                 self.jump = False
@@ -100,15 +102,16 @@ class Character(Sprite):
         self.vel_y += GRAVITY
         if self.vel_y > 10:
             self.vel_y = 10
-        dy = self.vel_y
+        dy += self.vel_y
 
-        # check collision with obstacles
+        # check collision with non destroyable obstacles 
         for tile in world.obstacle_list:
             # check in x direction
             if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
                 if self.char_type == "Enemy":
-                    self.flip = not self.flip
+                    self.direction *= -1
+                    self.move_counter = 0
             # check in y direction
             if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
@@ -118,10 +121,15 @@ class Character(Sprite):
                     self.vel_y = 0
                     self.in_air = False
                     dy = tile[1].top - self.rect.bottom
-
+        
+        
+        # checks collision with boxes
         for box in box_group:
             if box.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
+                if self.char_type == "Enemy":
+                    self.direction *= -1
+                    self.move_counter = 0
             if box.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                 if self.vel_y < 0: # check if jumping
                     self.vel_y = 0
@@ -153,11 +161,12 @@ class Character(Sprite):
         self.rect.y += dy
 
         # update scroll based on player position
-        if self.char_type != "player": # check if its the player
-            return screen_scroll, level_complete
-        if (self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE)) or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+        
+        if ((self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE))\
+            or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx))) and self.char_type == "Player":
             self.rect.x -= dx
             screen_scroll = -dx
+            
         return screen_scroll * 1.25, level_complete
 
 
@@ -173,56 +182,78 @@ class Character(Sprite):
             self.ammo -= 1
     
     def ai(self, bullet_group, player, grenade_group, world, screen_scroll, bg_scroll, water_group, exit_group, shoot_fx, box_group):
-        if not player.alive:
-            return
-        """Simple ai function to handle enemy movement/awareness"""
-        if self.alive:
-            if r.randint(1, 300) == 5 and not self.idling:
+        """function to handle enemy movement/awareness"""
+
+        if self.alive and player.alive:
+            if r.randint(1, 250) == 5 and not self.idling:
                 self.idling = True
-                self.update_action(0)
-                self.idling_counter = 200
+                self.update_action(0) # idle
+                self.idling_counter = 100 # how long the ai is idle for
+                
+            # checks if ai view is obstructed
+            tile_min_dist = 200
+            box_min_dist = 200
+            
+            # checking non destructable tiles
+            for tile in world.obstacle_list:
+                if self.vision.colliderect(tile[1]):
+                    dist_left = abs(tile[1].right - self.rect.left)
+                    dist_right = abs(tile[1].left - self.rect.right)
+                    tile_dist = min(dist_left, dist_right)
+                    tile_min_dist = min(tile_min_dist, tile_dist)
+            
+            # checking destructibles boxes
+            for box in box_group:
+                if self.vision.colliderect(box.rect):
+                    dist_left = abs(box.rect.right - self.rect.left)
+                    dist_right = abs(box.rect.left - self.rect.right)
+                    box_dist = min(dist_left, dist_right)
+                    box_min_dist = min(box_dist, box_min_dist)
+                    
+            nearest_visible_obstacle_dist = min(box_min_dist, tile_min_dist)
+            
+            
+            self.vision.width = nearest_visible_obstacle_dist
+            
                 
             # check if enemy sees the player
-            if self.vision.colliderect(player.rect) and player.alive:
-                # stop running and face the player
-                self.update_action(0)
-                if self.ammo > 0:
-                    self.shoot(bullet_group, shoot_fx)
-                if self.grenades > 0:
-                    if self.grenade_counter == 0:
-                        nade = self.grenade()
-                        grenade_group.add(nade)
-                        self.grenade_counter = 50
-                    else:
-                        self.grenade_counter -= 1
-            elif not self.idling:
-                if self.direction == 1:
-                    ai_moving_right = True
-                else:
-                    ai_moving_right = False
-                ai_moving_left = not ai_moving_right
-
+            if self.vision.colliderect(player.rect):
+                self.update_action(0) # idling
+                self.shoot(bullet_group, shoot_fx)
+                nade = self.grenade()
+                if nade:
+                    grenade_group.add(nade)
                 
-                self.move(ai_moving_left, ai_moving_right, world, bg_scroll, water_group, exit_group, box_group)
-                self.update_action(1)
-                self.move_counter += 1
-
-                # update ai vision as the enemy moves
-
-                self.vision.center = (self.rect.centerx + 100 * self.direction, self.rect.centery)
-
-                if self.move_counter > TILE_SIZE:
-                    self.move_counter *= -1
-                    self.direction *= -1
+                # TODO 
+                # Enemy not shooting when seeing player
+                
+                
+                
             else:
-                self.idling_counter -= 1
-                if self.idling_counter <= 0:
-                    self.idling = False
-        # scroll
-        else:
-            
-            self.move(False, False, world, bg_scroll, water_group, exit_group, box_group)
-        self.rect.x += screen_scroll
+                if not self.idling:
+                    if self.direction == 1:
+                        ai_moving_right = True
+                    else:
+                        ai_moving_right = False
+                    ai_moving_left = not ai_moving_right
+                    self.move(ai_moving_left, ai_moving_right, world, bg_scroll, water_group, exit_group, box_group)
+                    self.update_action(1) # run
+                    self.move_counter += 1
+                    
+                    
+                    
+                    
+                    if self.move_counter > TILE_SIZE * 2:
+                        self.direction *= -1
+                        self.move_counter *= -1
+                else:
+                    self.idling_counter -= 1
+                    if self.idling_counter <= 0:
+                        self.idling = False
+                        
+            # update enemy vision
+            self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+            self.rect.x += screen_scroll
 
             
 

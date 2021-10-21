@@ -35,7 +35,7 @@ class World():
                         self.obstacle_list.append(tile_data)
                     elif tile == 12:
                         box = Box(img_rect.x, img_rect.y, img, 1)
-                        box_group.add(box) 
+                        box_group.add(box)
                     elif tile == 9 or tile == 10:
                         water = Water(img, img_rect.x, img_rect.y)
                         water_group.add(water)
@@ -44,7 +44,7 @@ class World():
                         decoration_group.add(decoration)
                     elif tile == 15:
                         # create player
-                        player = Character(screen, "player", img_rect.x, img_rect.y, 1.65, 20, 10, 4)
+                        player = Character(screen, "player", img_rect.x, img_rect.y, 1.65, 20, 10, 2)
                         player_health_bar = HealthBar(10, 10, player.health, player.health)
                     elif tile == 16:
                         # create enemies

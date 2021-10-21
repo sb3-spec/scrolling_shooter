@@ -16,3 +16,4 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 # COLORS
 PINK = (235, 65, 54)
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
