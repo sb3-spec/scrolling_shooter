@@ -8,7 +8,7 @@ mixer.init()
 Sprite = pygame.sprite.Sprite
 
 from world import World
-from settings import MAX_LEVELS, screen, SCREEN_HEIGHT, SCREEN_WIDTH, screen_scroll, bg_scroll, PINK, BLACK
+from settings import MAX_LEVELS, screen, SCREEN_HEIGHT, SCREEN_WIDTH, PINK, BLACK
 from button import Button
 from screenfade import ScreenFade
 
@@ -23,6 +23,8 @@ FPS = 80
 # game variables
 level = 1
 start_game = False
+screen_scroll = 0
+bg_scroll = 0
 # define player variables
 moving_left = False
 moving_right = False

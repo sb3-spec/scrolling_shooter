@@ -162,10 +162,11 @@ class Character(Sprite):
 
         # update scroll based on player position
         
-        if ((self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE))\
-            or (self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx))) and self.char_type == "Player":
-            self.rect.x -= dx
-            screen_scroll = -dx
+        if self.char_type == "player":
+            if ((self.rect.right > SCREEN_WIDTH - SCROLL_THRESH and bg_scroll < (world.level_length * TILE_SIZE))\
+                or self.rect.left < SCROLL_THRESH and bg_scroll > abs(dx)):
+                self.rect.x -= dx
+                screen_scroll = -dx
             
         return screen_scroll * 1.25, level_complete
 
@@ -251,9 +252,9 @@ class Character(Sprite):
                     if self.idling_counter <= 0:
                         self.idling = False
                         
-            # update enemy vision
-            self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
-            self.rect.x += screen_scroll
+        # update enemy vision
+        self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+        self.rect.x += screen_scroll
 
             
 
