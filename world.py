@@ -37,7 +37,7 @@ class World():
                         box = Box(img_rect.x, img_rect.y, img, 1)
                         box_group.add(box)
                     elif tile == 9 or tile == 10:
-                        water = Water(img, img_rect.x, img_rect.y)
+                        water = Water(img, img_rect.x, img_rect.y, .02)
                         water_group.add(water)
                     elif tile >= 11 and tile <= 14:
                         decoration = Decoration(img, img_rect.x, img_rect.y)

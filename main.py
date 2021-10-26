@@ -245,15 +245,17 @@ while running:
                 moving_right = True
             elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 moving_left = True
-            if event.key == pygame.K_w or event.key == pygame.K_UP and player.alive:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_UP and player.alive:
                 player.jump = True
                 jump_fx.play()
-            if event.key == pygame.K_SPACE and player.alive:
+            if event.key == pygame.K_DOWN and player.alive:
                 shooting = True
             if event.key == pygame.K_q:
                 grenade = True
             if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
                 player.speed = player.running_speed
+                player.jump_speed = -18
+                
         
         # keyboard button release
         if event.type == pygame.KEYUP:
@@ -261,15 +263,14 @@ while running:
                 moving_right = False
             if event.key == pygame.K_LEFT or event.key == pygame.K_a:
                 moving_left = False
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_DOWN:
                 shooting = False
             if event.key == pygame.K_q:
                 grenade = False
                 grenade_thrown = False
-            if event.key == pygame.K_SPACE:
-                shooting = False
             if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
                 player.speed = player.walking_speed
+                player.jump_speed = -15
 
         
 

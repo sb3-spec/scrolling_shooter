@@ -30,6 +30,7 @@ class Character(Sprite):
         self.action = 0
         self.frame_index = 0
         self.animation_list = []
+        self.jump_speed = -15
         self.jump = False
         self.in_air = True
         self.alive = True
@@ -94,7 +95,7 @@ class Character(Sprite):
                 self.direction = 1
                 
             if self.jump and not self.in_air:
-                self.vel_y = -15
+                self.vel_y = self.jump_speed
                 self.jump = False
                 self.in_air = True
         

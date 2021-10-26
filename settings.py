@@ -9,7 +9,6 @@ TILE_TYPES = 21
 SCROLL_THRESH = 500
 GRAVITY = .75
 MAX_LEVELS = 3
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # COLORS

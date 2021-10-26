@@ -1,0 +1,3 @@
+[submodule "Level"]
+	path = Level
+	url = https://github.com/sb3-spec/2D-Level-Editor
